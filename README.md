@@ -28,7 +28,11 @@ You are ready to roll!
 # Usage 
 Run the YOLO.py file to start training your YOLO model. Train and test results will be displayed while training. The model is stored every epoch. 
 
-A stored model can be loaded and tested by filling in the model file location in the “param_saved_model_file” variable in the YoloLib.py module. Now the the loaded model will be used to predict objects in one batch of images. Each image in this batch will be shown with the predicted objects marked. 
+A stored model can be loaded and tested by filling in the stored model file location in the “param_saved_model_file” variable in the YoloLib.py module. Now the the loaded model will be used to predict objects in one batch of images. Each image in this batch will be shown with the predicted objects marked. 
+
+These are prediction results of a yolo model trained with this project for 12 epochs:
+![alt text](https://github.com/RobbertBrand/Yolo-Tensorflow-Implementation/blob/master/Figure_1-1.png "")
+![alt text](https://github.com/RobbertBrand/Yolo-Tensorflow-Implementation/blob/master/Figure_1-2.png "")
 
 # performance
 This Python project was used to train the Yolo model defined in YoloLib.py, on an Intel i7 set-up with a Nvidia Geforce 750M graphic card. The model was trained on about 65000 Coco data set images for between 10 and 20 epochs. Results are acceptable but far from perfect because of two reasons. A larger model with more yolo output cells couldn’t be trained on my set-up because of the limited amount of available working memory. The second reason is that filtering of the predictions has to be further implemented like a non-max suppression algorithm.
