@@ -1,44 +1,87 @@
+"""
+COCO provides a simple way to use the coco data set thru a standardized interface. Implementing this
+module can reduce complexity in the code for gathering and preparing "Coco data set" data. Besides that does the module
+provide a standardized and simple interface which could be used with any data set containing image file locations and
+bboxes.
+
+#########
+# USAGE #
+#########
+
+# set category filters filters
+param_coco_cat_filters = [['person'], ['car'], ['bus'], ['truck']]
+
+# set coco dataset locations
+param_coco_annotation_file = '..\\COCO\\annotations_trainval2017\\annotations\\instances_train2017.json'
+param_coco_img_dir = '..\\COCO\\annotations_trainval2017\\images\\train2017\\'
+
+# load data set
+coco = COCO.CocoDatasetInterface(param_coco_annotation_file, param_coco_img_dir)
+data_x, data_y, data_dict_cat = coco.get_category_labeled_images(param_coco_cat_filters)
+
+
+########################
+# STANDARD DATA FORMAT #
+########################
+
+data_x is a list of image file locations [image_file_locations, ...]
+data_y is a list with labels [[[bbox1_img1, bbox1_category_img1], [bbox2_img1, bbox2_category_img1], ...],
+                              [[bbox1_img2, bbox1_category_img2], [bbox2_img2, bbox2_category_img2], ...],
+                              ...]
+The bboxN_imgN variables specify the actual bboxes in format [x,y,width,height] where x and y are the left top corner
+position of the bbox.
+
+"""
+
 from pycocotools.coco import COCO
 from BasicLib.BasicFunctions import *
 
 
-def show_coco_data_point(img, label_list):
+def show_coco_data_point(img, label_list, load_image_from_file=False):
     """
-    Display coco dataset image and labels.
-    :param img: loaded images
+    Display coco data set image and labels.
+    :param img: loaded image of image file location
     :param label_list: labels
+    :param load_image_from_file: interprets 'img' as file location when True.
     """
-    # image = load_image(image)
+    image = img
+    if load_image_from_file:
+        image = load_image(img)
+
     for bbox, category in label_list:
         pt1 = (int(bbox[0]), int(bbox[1]))
         pt2 = (int(pt1[0] + bbox[2]), int(pt1[1] + bbox[3]))
 
         color = (np.random.random((1, 3)) * 255).tolist()[0]
-        cv2.rectangle(img, pt1, pt2, color, 2)
-    show_image(img)
+        cv2.rectangle(image, pt1, pt2, color, 2)
+    show_image(image)
 
 
 class CocoDatasetInterface:
     """
-    This class forms a easy to use interface, meant to serve the data to a machine learning algorithm.
+    This class forms a easy to use interface, meant to serve the data to a machine learning algorithm. Implementing this
+    class can reduce complexity in the code for gathering and preparing data. Besides that does the class provide a
+    standardized and simple interface which could be used with any data set containing image file locations and bboxes.
 
     EXAMPLE:
+    from DataLibrary.COCO import *
+
     coco_annotation_file = '..\\COCO\\annotations_trainval2017\\annotations\\instances_train2017.json'
     coco_image_folder = '..\\COCO\\annotations_trainval2017\\images\\train2017\\'
     coco = CocoDatasetInterface(coco_annotation_file, coco_image_folder)
-    images, cat_dict = coco.get_category_labeled_images([['person'], ['car', 'bicycle', 'dog']])
+    images, labels, cat_dict = coco.get_category_labeled_images([['person'], ['car', 'bicycle', 'dog']])
 
     coco.print_available_categories()
 
-    show_coco_data_point(images[0][0])
+    show_coco_data_point(images[0], labels[0], True)
+
     """
 
     def __init__(self, coco_ann_file, coco_img_dir):
         """
         Initialize class.
-
-        :param coco_ann_file: file location of the COCO dataset annotation file
-        :param coco_img_dir:  file location of the COCO dataset image files
+        :param coco_ann_file: file location of the COCO data set annotation file
+        :param coco_img_dir:  file location of the COCO data set image files
         """
         # self.coco_annotation_file = coco_ann_file
         self.coco_image_folder = coco_img_dir
@@ -47,11 +90,7 @@ class CocoDatasetInterface:
         self.filtered_category_ids = None
 
     def print_available_categories(self):
-        """
-        Prints al the COCO dataset categories.
-
-        :return: nothing
-        """
+        """Prints all the Coco data set categories."""
         print("ID:  Category:        Super Category:")
         for cat in self.categories:
             print("{:2}   {:15}  {}".format(cat['id'], cat['name'], cat['supercategory']))
@@ -59,7 +98,8 @@ class CocoDatasetInterface:
 
     def get_images_ids(self, cat_nested_list):
         """
-        Returns list of image id's of images which meet the given category filter
+        Returns list of image id's of images which meet the given category filter. These id's can be used to load
+        the image specifications.
         :param cat_nested_list: is a list of lists, each inner list describing the items which has to be in the image
                                     in the following format: [['car'], ['cat', 'horse']]
         :return: list of image specifications, list of category id's
@@ -76,6 +116,8 @@ class CocoDatasetInterface:
 
     def build_category_dict(self, cat_list):
         """
+        Creates two dictionaries linking the coco category id's to the normalized id's and the category names to their
+        normalized id's. These Dictionaries can be used to make id normalization and id to name linking easy.
         Returns two dictionaries.:
             cat_dict[0 .. n_categories] => cat_name
             cat_translate_dict[coco_cat_id] => normalized_cat
@@ -111,28 +153,32 @@ class CocoDatasetInterface:
 
     def get_image_file_location(self, img_spec):
         """
-        Returns image file locations
+        Returns image file location
         :param img_spec: coco image specification
-        :return: image file locations
+        :return: image file location
         """
         return self.coco_image_folder + img_spec['file_name']
 
-    def get_category_labeled_images(self, cat_nested_list, verbose=True):
+    def get_category_labeled_images(self, cat_nested_list, verbose=True, print_func=print):
         """
+        This function forms the actual interface and output of the class, providing the coco data via a standardized and
+        simple format.
+
         Returns a list with [image_file_locations, ...] a list with labels [[bounding boxes, bbox category], ...] and a
         dictionary linking the category names to their id's. The images contain all the categories specified in the
         'cat_nested_list' parameter.
 
-        :param cat_nested_list: is a list of lists, each inner list describing the items which has to be in the image
+        :param cat_nested_list: is a list of lists, each inner list describing the items which has to be in the image.
         :param verbose: print when True, a description of the selected data.
+        :param print_func: contains a function to print 'verbose' information with. Is the print function by default.
         :return: a list with image file locations, a list with corresponding labels in format
                     [[[x,y,width,height], bbox_category_id], ...], [[x,y,width,height], bbox_category_id], ...], ...]
                     and a dictionary linking the category names to their id's.
 
         example:
-        get_get_category_labeled_images([['person'], ['car', 'bicycle', 'dog']] ,verbose=False)
-        returns images with atleast a person in it AND images with atleast a car AND a bicyle AND a dog.
-        labels for eachcategory are added to each image, so a image images with atleast a car AND a bicyle AND a dog
+        get_category_labeled_images([['person'], ['car', 'bicycle', 'dog']] ,verbose=False)
+        returns images with at least a person in it AND images with at least a car AND a bicycle AND a dog.
+        labels for each category are added to each image, so a image images with at least a car AND a bicycle AND a dog
         might also contain labels of persons.
         """
         img_spec_list, cat_list = self.get_images_ids(cat_nested_list)
@@ -152,9 +198,23 @@ class CocoDatasetInterface:
 
         # display data details
         if verbose:
-            print("Categories selected: ", cat_dict)
-            print("Total images:        ", len(img_spec_list))
-            print()
+            print_func("Categories selected: {}".format(cat_dict))
+            print_func("Total images:        {}".format(len(img_spec_list)))
             for cat_id, cat_ann_count in zip(range(len(total_ann_count)), total_ann_count):
-                print("Annotations in \"{}\": {}".format(cat_dict[cat_id], cat_ann_count))
+                print_func("Annotations in \"{}\": {}".format(cat_dict[cat_id], cat_ann_count))
         return x_data, y_data, cat_dict
+
+    def get_image_sizes(self, cat_nested_list):
+        """
+        Returns a list of image sizes in pixels. If the same value for the 'cat_nested_list' parameter is used as with
+        the 'get_category_labeled_images' method, will the returned sizes match the data_x and data_y result lists of
+        the get_category_labeled_images method. So:
+            img_size_list[i] belongs to data_x[i] and data_y[i]
+        :param cat_nested_list: is a list of lists, each inner list describing the items which has to be in the image.
+        :return: list of image sizes in format [[width, height], ...]
+        """
+        img_size_list = []
+        img_spec_list, cat_list = self.get_images_ids(cat_nested_list)
+        for img_spec in img_spec_list:
+            img_size_list.append([img_spec['width'], img_spec['height']])
+        return img_size_list
