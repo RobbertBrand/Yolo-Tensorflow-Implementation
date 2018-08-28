@@ -330,6 +330,46 @@ def create_reshape(input_data, output_shape):
         return result
 
 
+def create_iou(x_1, y_1, w_1, h_1, x_2, y_2, w_2, h_2):
+    """
+    Creates a layer which returns the iou's between two area's.
+    :param x_1: bbox center position x
+    :param y_1: bbox center position y
+    :param w_1: bbox width
+    :param h_1: bbox height
+    :param x_2: bbox center position x
+    :param y_2: bbox center position y
+    :param w_2: bbox width
+    :param h_2: bbox height
+    :return: iou
+    """
+    min_w = tf.maximum(x_1 - (w_1 / 2.0), x_2 - (w_2 / 2.0))
+    max_w = tf.minimum(x_1 + (w_1 / 2.0), x_2 + (w_2 / 2.0))
+    min_h = tf.maximum(y_1 - (h_1 / 2.0), y_2 - (h_2 / 2.0))
+    max_h = tf.minimum(y_1 + (h_1 / 2.0), y_2 + (h_2 / 2.0))
+
+    overlap_w = max_w - min_w
+    overlap_h = max_h - min_h
+
+    overlap_w = create_negative_filter(overlap_w)
+    overlap_h = create_negative_filter(overlap_h)
+
+    overlap_area = (overlap_w * overlap_h)
+    total_area = (w_1 * h_1) + (w_2 * h_2) - overlap_area
+
+    return create_nan_filter(overlap_area / total_area)
+
+
+def create_nan_filter(tensor):
+    """Creates a layer which replace NaN's with zero's."""
+    return tf.where(tf.is_nan(tensor), tf.zeros_like(tensor), tensor)
+
+
+def create_negative_filter(tensor):
+    """Creates a layer which replace negative value's with zero's."""
+    return tf.maximum(tensor, tf.constant(0.0))
+
+
 class ModelCreator:
     """
     The ModelCreator can create a neural network model from a configuration. The configuration is specified
