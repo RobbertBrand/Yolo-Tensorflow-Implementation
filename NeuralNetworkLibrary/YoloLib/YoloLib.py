@@ -268,7 +268,10 @@ def yolo_loss(prediction, labels, outp_cat_count, coord_loss_compensation=5, no_
         category_loss = tf.reduce_sum(object_in_anchor * tf.reduce_sum(tf.pow(label_classes - predicted_classes, 2), 3))
 
         # anchor confidence loss
-        confidence_loss = tf.reduce_sum(object_in_anchor * tf.pow(label_iou - predicted_iou, 2)) + (
+        confidence_score = create_iou(label_x, label_y, label_w, label_h, predicted_x, predicted_y, predicted_w,
+                                      predicted_h)
+
+        confidence_loss = tf.reduce_sum(object_in_anchor * tf.pow(predicted_iou - confidence_score, 2)) + (
                 no_object_compensation * tf.reduce_sum(no_object_in_anchor * tf.pow(label_iou - predicted_iou, 2)))
 
     if verbose:
