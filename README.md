@@ -53,11 +53,11 @@ These are prediction results of a small Yolo model trained with this project for
 ![prediction](Figure_1-2.png)
 
 # performance
-This Python project was used to train a Yolo model defined in config.py, on an Intel i7 set-up with a Nvidia Geforce 750M graphic card. The model was trained on about 65000 Coco dataset images for between 10 and 20 epochs. Results are acceptable but far from perfect because of the following reasons.
+This Python project was used to train a Yolo model, defined in config.py, on an Intel i7 set-up with a Nvidia Geforce 750M graphic card. The model was trained on about 65000 Coco dataset images for between 10 and 20 epochs. Results are acceptable but far from perfect because of the following reasons.
 - A larger model couldn’t be trained on my set-up because of the limited amount of available memory.
 - Further tuning of the models hyper parameters and increasing the model size is required to improve precision and recall.
 - Filtering of the predictions has to be further implemented like a non-max suppression algorithm.
-- Also is only a limited amount of data augmentation implemented.
+- Only a limited amount of data augmentation is currently implemented.
 
 The following settings in the `config.ini` file could be optimized to boost model precision and recall in a relative simple way:
 
@@ -70,13 +70,8 @@ The Yolo output cell grid size could be tweaked in parameter `[Model.output] yol
 - Image size (640, 480) and yolo output size (10, 9) is not correct.
 
 The anchor box specification (the to be predicted object widths and heights) should match the bbox sizes of the dataset as close as possible. This anchor box specification is optimized automatically on the given dataset (Coco dataset in this case) according to the following parameters:
-```
-[Model.tune]
-anchors_max
-anchor_min_iou_gain
-anchor_min_iou
-```
-|test||
+
+|[Model.tune]||
 | --- | --- |
 |`anchors_max`|Sets the maximum amount of allowed anchors. (a value of 10 would make sense)|
 |`anchor_min_iou_gain`|Sets the minimum amount of gained result per added anchor box, to keep adding anchor boxes to the anchor box specification. The result is determined by computing the average IOU between the anchor boxes and the bboxes from the dataset. When the last IOU minus the second to last IOU is more than ‘anchor_min_iou_gain’, shall one more anchor box be added to the specification and this routine repeated. (a value of 0.01 would make sense)|
